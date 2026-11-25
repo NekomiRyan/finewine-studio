@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ArrowDown, ArrowUpRight } from "lucide-react";
+import { useEffect, useRef, type ReactNode } from "react";
+import { ArrowDown, ArrowUpRight, Check, Minus } from "lucide-react";
+import icon from "@/assets/finewine-icon.png.asset.json";
 
 const REPO = "https://github.com/stoicswe/Endfield_FineWine";
 const RELEASES = `${REPO}/releases`;
@@ -24,13 +26,45 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-function Bottle({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
-      <path d="M10 2h4M10.5 2v4.2c0 .6-.3 1.1-.7 1.5C8.7 8.6 8 10 8 11.5V20a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-8.5c0-1.5-.7-2.9-1.8-3.8-.4-.4-.7-.9-.7-1.5V2" />
-      <path d="M8 13.5h4.5a1.5 1.5 0 0 1 1.5 1.5v2a1.5 1.5 0 0 1-1.5 1.5H8" />
-    </svg>
-  );
+
+function Reveal({ children, className = "" }: { children: ReactNode; className?: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver(([e]) => {
+      if (e?.isIntersecting) { el.classList.add("is-in"); io.disconnect(); }
+    }, { threshold: 0.15 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  return <div ref={ref} className={`reveal ${className}`}>{children}</div>;
+}
+
+const pipeline = [
+  { k: "Windows game", v: ".exe, x64" },
+  { k: "FEX", v: "x64 → ARM64" },
+  { k: "ARM64 Wine", v: "Win32 → macOS" },
+  { k: "DXMT · MoltenVK", v: "DirectX / Vulkan" },
+  { k: "Metal", v: "Apple GPU" },
+];
+
+type Cell = boolean | string;
+const tools = ["FineWine", "CrossOver", "Bridgeplay", "Highball"] as const;
+const rows: { label: string; cells: Cell[] }[] = [
+  { label: "Price", cells: ["Free", "From $54 / year", "Free", "Free"] },
+  { label: "Open source", cells: [true, false, true, true] },
+  { label: "Runs without Rosetta 2", cells: [true, false, false, false] },
+  { label: "Native ARM64 Wine", cells: [true, false, false, false] },
+  { label: "Works outside Steam", cells: [true, true, false, true] },
+  { label: "Anti-cheat compatibility work", cells: ["ACE (Endfield)", false, false, false] },
+  { label: "Minimum macOS", cells: ["26", "11.1", "26", "14"] },
+];
+
+function CellView({ v, hi }: { v: Cell; hi: boolean }) {
+  if (v === true) return <Check className={`mx-auto h-4 w-4 ${hi ? "text-wine" : "text-foreground"}`} aria-label="Yes" />;
+  if (v === false) return <Minus className="mx-auto h-4 w-4 text-muted-foreground/50" aria-label="No" />;
+  return <span className={hi ? "text-foreground" : "text-muted-foreground"}>{v}</span>;
 }
 
 const pill = "inline-flex items-center justify-center gap-2 rounded-full px-5 h-10 text-sm font-medium transition-colors";
@@ -49,7 +83,7 @@ function Index() {
       <header className="sticky top-0 z-50 border-b border-border/60 bg-background/70 backdrop-blur-xl">
         <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-5 sm:px-8">
           <a href="/" className="flex shrink-0 items-center gap-2 font-semibold tracking-tight">
-            <Bottle className="h-5 w-5" /> FineWine
+            <img src={icon.url} alt="" className="h-6 w-6" /> FineWine
           </a>
           <div className="flex items-center gap-5 sm:gap-7">
             <a href={DOCS} className="hidden text-xs text-muted-foreground hover:text-foreground sm:inline">Documentation</a>
@@ -65,7 +99,7 @@ function Index() {
             <span className="h-1.5 w-1.5 rounded-full bg-foreground" /> FineWine for Apple Silicon
           </span>
           <h1 className="mx-auto mt-7 max-w-4xl text-[clamp(2.6rem,8vw,5.75rem)] font-semibold leading-[1.02] tracking-[-0.045em] fade-up">
-            Windows games.<br />Mac at heart.
+            Windows games.<br /><span className="text-gradient-wine">Mac at heart.</span>
           </h1>
           <p className="mx-auto mt-6 max-w-md text-base text-muted-foreground sm:text-lg">
             A new home for Windows games on Apple Silicon. Your own Wine runtime. A familiar Mac experience.
@@ -78,10 +112,7 @@ function Index() {
 
           <div className="relative mt-20 flex flex-col items-center pb-8 sm:mt-24">
             <div className="glow pointer-events-none absolute left-1/2 top-1/2 h-[420px] w-[min(640px,100%)] -translate-x-1/2 -translate-y-1/2" />
-            <div className="relative flex h-36 w-36 flex-col items-center justify-center gap-3 rounded-[2rem] border border-border bg-gradient-to-b from-secondary to-card shadow-2xl sm:h-40 sm:w-40">
-              <Bottle className="h-10 w-10" />
-              <span className="text-base font-semibold tracking-tight">FineWine</span>
-            </div>
+            <img src={icon.url} alt="FineWine app icon" width={1024} height={1024} className="float relative h-44 w-44 drop-shadow-[0_30px_60px_rgba(0,0,0,0.8)] sm:h-56 sm:w-56" />
             <p className="relative mt-8 text-[10px] uppercase tracking-[0.25em] text-muted-foreground">ARM64 Wine · FEX · Metal</p>
           </div>
         </section>
@@ -91,7 +122,7 @@ function Index() {
           <h2 className="mt-6 text-[clamp(2rem,4.5vw,3.25rem)] font-semibold leading-[1.05] tracking-[-0.04em]">
             Not a virtual machine.<br />Just a better way in.
           </h2>
-          <div className="mt-14 grid gap-10 sm:grid-cols-2 lg:grid-cols-3 lg:gap-14">
+          <Reveal className="mt-14 grid gap-10 sm:grid-cols-2 lg:grid-cols-3 lg:gap-14">
             {features.map((f) => (
               <div key={f.n} className="border-t border-border pt-6">
                 <p className="text-[11px] text-muted-foreground">{f.n}</p>
@@ -99,7 +130,71 @@ function Index() {
                 <p className="mt-3 max-w-xs text-sm leading-relaxed text-muted-foreground">{f.d}</p>
               </div>
             ))}
-          </div>
+          </Reveal>
+        </section>
+
+        <section className="mx-auto max-w-6xl px-5 pt-24 sm:px-8 sm:pt-32">
+          <Reveal>
+            <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground">Under the glass.</p>
+            <h2 className="mt-6 text-[clamp(2rem,4.5vw,3.25rem)] font-semibold leading-[1.05] tracking-[-0.04em]">
+              From .exe to Metal.<br /><span className="text-muted-foreground">Without the detour.</span>
+            </h2>
+          </Reveal>
+          <Reveal className="mt-14">
+            <ol className="grid gap-px overflow-hidden rounded-2xl border border-border bg-border sm:grid-cols-5">
+              {pipeline.map((p, i) => (
+                <li key={p.k} className="relative bg-background p-6">
+                  <span className="text-[11px] tabular-nums text-muted-foreground">0{i + 1}</span>
+                  <p className={`mt-6 text-base font-semibold tracking-tight ${i === pipeline.length - 1 ? "text-wine" : ""}`}>{p.k}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{p.v}</p>
+                  <span className="flow absolute inset-x-0 bottom-0 h-px" style={{ animationDelay: `${i * 0.35}s` }} />
+                </li>
+              ))}
+            </ol>
+          </Reveal>
+        </section>
+
+        <section className="mx-auto max-w-6xl px-5 pt-24 sm:px-8 sm:pt-32">
+          <Reveal>
+            <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground">How it compares.</p>
+            <h2 className="mt-6 text-[clamp(2rem,4.5vw,3.25rem)] font-semibold leading-[1.05] tracking-[-0.04em]">
+              Good company.<br />A different pour.
+            </h2>
+            <p className="mt-5 max-w-lg text-sm leading-relaxed text-muted-foreground sm:text-base">
+              CrossOver, Bridgeplay and Highball are all excellent. FineWine takes another route: its own native ARM64 Wine, so x64 code is translated by FEX instead of Rosetta 2.
+            </p>
+          </Reveal>
+          <Reveal className="mt-12">
+            <div className="-mx-5 overflow-x-auto px-5 sm:mx-0 sm:px-0">
+              <table className="w-full min-w-[640px] border-separate border-spacing-0 text-sm">
+                <thead>
+                  <tr>
+                    <th className="w-[34%] pb-4 text-left font-normal" />
+                    {tools.map((t, i) => (
+                      <th key={t} className={`pb-4 text-center font-semibold tracking-tight ${i === 0 ? "rounded-t-xl bg-card pt-4 text-foreground" : "text-muted-foreground"}`}>
+                        {t}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((r, ri) => (
+                    <tr key={r.label}>
+                      <td className="border-t border-border py-4 pr-4 text-muted-foreground">{r.label}</td>
+                      {r.cells.map((c, i) => (
+                        <td key={i} className={`border-t border-border px-3 py-4 text-center ${i === 0 ? `bg-card ${ri === rows.length - 1 ? "rounded-b-xl" : ""}` : ""}`}>
+                          <CellView v={c} hi={i === 0} />
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="mt-5 text-xs text-muted-foreground">
+              Based on each project's public documentation, November 2026. CrossOver remains the most broadly supported commercial option.
+            </p>
+          </Reveal>
         </section>
 
         <section className="mx-auto max-w-6xl px-5 pt-24 sm:px-8 sm:pt-32">
